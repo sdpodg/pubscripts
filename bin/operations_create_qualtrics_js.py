@@ -10,15 +10,28 @@ from pprint import pprint
 
 import argparse
 parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('filename', help="The source csv file, which should have two columns for the space_desc and space_cvode")
+parser.add_argument('--space-filename', '-s', default='input/spacetypes.csv', help="The source csv file, which should have two columns for the space_desc and space_code")
+parser.add_argument('--building-filename', '-b', default='input/school drill down.xlsx', help="The source file to generate the building list")
 args = parser.parse_args()
 
 def do_things():
-    process_area_types()
+    create_building_map(args.building_filename)
+    process_area_types(args.space_filename)
 
-def process_area_types():
 
-    mb = matrixb.Importer(args.filename).get_matrix()
+
+def create_building_map(filename):
+    mb = matrixb.Importer(filename).get_matrix()
+    js = {}
+    for row in mb.rowmap():
+        js[row['building_id']] = [row['ulcs'], row['school_name'], row['building_name']]
+    with open('js/operations-building-map.js', 'w') as fh:
+        print("building_map = " + json.dumps(js) + ";\n", file=fh)
+
+
+def process_area_types(filename):
+
+    mb = matrixb.Importer(filename).get_matrix()
 
     spacedata = []
     for row in mb.rowmap():
@@ -28,7 +41,7 @@ def process_area_types():
         })
 
     with open('js/operations-spacetypes-acdata.js', 'w') as fh:
-        print("spacetypes = " + json.dumps(spacedata) + ";\n\n", file=fh)
+        print("spacetypes = " + json.dumps(spacedata) + ";\n", file=fh)
 
 def main():
     try:
